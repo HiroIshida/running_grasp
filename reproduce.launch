@@ -1,8 +1,9 @@
 <launch>
 
   <arg name="manager" default="ishi"/>
-
-  <arg name="camera" default="kinect_head"/>
+  <arg name="fetch" default="true"/>
+  <arg name="camera" default="head_camera" if="$(arg fetch)"/>
+  <arg name="camera" default="kinect_head" unless="$(arg fetch)"/>
 
   <arg name="launch_manager" default="true"/>
 
