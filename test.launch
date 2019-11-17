@@ -34,22 +34,6 @@
       </rosparam>
     </node>
 
-    <node name="hsi_filter" pkg="nodelet" type="nodelet"
-      args="standalone jsk_pcl/HSIColorFilter" 
-      output="screen">
-      <remap from="~input" to="ExtractIndices/output" />
-      <rosparam>
-        use_indices: false
-        keep_organized: false
-      </rosparam>
-      <param name="h_limit_max" value="8" />
-      <param name="h_limit_min" value="-128" />
-      <param name="s_limit_max" value="255" />
-      <param name="s_limit_min" value="45" />
-      <param name="i_limit_max" value="255" />
-      <param name="i_limit_min" value="0" />
-    </node>
-
     <node name="multi_plane_estimate" pkg="nodelet" type="nodelet"
           args="standalone jsk_pcl/OrganizedMultiPlaneSegmentation"
           output="screen">
@@ -70,8 +54,24 @@
       <remap from="~indices" to="multi_plane_estimate/output"/>
       <rosparam>
         min_height: 0.01
-        max_height: 0.6
+        max_height: 0.3
       </rosparam>
+    </node>
+
+    <node name="hsi_filter" pkg="nodelet" type="nodelet"
+      args="standalone jsk_pcl/HSIColorFilter" 
+      output="screen">
+      <remap from="~input" to="multi_plane_extraction/output" />
+      <rosparam>
+        use_indices: false
+        keep_organized: false
+      </rosparam>
+      <param name="h_limit_max" value="8" />
+      <param name="h_limit_min" value="-128" />
+      <param name="s_limit_max" value="255" />
+      <param name="s_limit_min" value="45" />
+      <param name="i_limit_max" value="255" />
+      <param name="i_limit_min" value="0" />
     </node>
 
   </group>
