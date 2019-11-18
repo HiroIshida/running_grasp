@@ -1,4 +1,6 @@
 <launch>
+  <arg name="remote" default="false"/>
+  <include file="$(find running_grasp)/reproduce.launch" unless="$(arg remote)"/>
   <arg name="camera" default="head_camera_remote"/>
   <arg name="input_image" default="/$(arg camera)/rgb/image_rect_color"/>
   <arg name="input_camera_info" default="/$(arg camera)/rgb/camera_info"/>
@@ -80,7 +82,7 @@
           <remap from="~input" to="hsi_filter/output" />
       <rosparam>
         tolerance: 0.02
-        min_size: 200
+        min_size: 100
       </rosparam>
     </node>
 
