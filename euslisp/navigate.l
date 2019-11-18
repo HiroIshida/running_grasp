@@ -28,8 +28,6 @@
   (ros::spin-once)
   (unless (null *pos*) (return)))
 
-
-
 (defun get-end-effector-state (robot which-arm)
   (let* ((coords-endeffector (send robot which-arm :end-coords))
          (rot-endeffector (send coords-endeffector :worldrot))
@@ -46,15 +44,23 @@
          (y-diff (- (aref obj-pos 1) (aref arm-pos 1))))
     (send *pr2* :rarm :move-end-pos (float-vector 0 y-diff 0) :world)))
 
-(defun get-yerror (obj-pos)
+(defun get-error (obj-pos)
   (let* ((arm-pos (first (get-end-effector-state *pr2* :rarm)))
-         (y-diff (- (aref obj-pos 1) (aref arm-pos 1))))
-    y-diff))
+         (e (v- obj-pos arm-pos)))
+    e))
 
+(send *ri* :move-gripper :rarm 0.08 :wait t)
+(unix:sleep 2)
 (loop
   (ros::spin-once)
-  (let ((y-diff (get-yerror *pos*)))
-    (send *pr2* :rarm :move-end-pos (float-vector 0 (* y-diff 1.5) 0) :world))
+  (let* ((e (get-error *pos*))
+         (y-diff (aref e 1))
+         (x-diff (aref e 0)))
+    (bench (send *pr2* :rarm :move-end-pos (float-vector 0 (* y-diff 1.5) 0) :world))
+    (when (< x-diff 250)
+      (send *ri* :move-gripper :rarm 0.04 :wait t)
+      (return))
+    (print x-diff))
   (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
-  (unix:usleep 100000))
+  (unix:usleep 50000))
 
