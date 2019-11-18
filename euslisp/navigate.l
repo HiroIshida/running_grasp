@@ -18,6 +18,10 @@
                         (setq *pos* (rospos->eusvec (send pose :position)))))))
 
 (pr2-init)
+
+(send *pr2* :rarm :move-end-pos #f(0 0 -100) :world)
+(send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
+
 (send *pr2* :angle-vector vec)
 (send *ri* :angle-vector (send *pr2* :angle-vector))
 (send *ri* :wait-interpolation)
@@ -49,6 +53,7 @@
          (e (v- obj-pos arm-pos)))
     e))
 
+
 (send *ri* :move-gripper :rarm 0.08 :wait t)
 (unix:sleep 2)
 (loop
@@ -57,10 +62,13 @@
          (y-diff (aref e 1))
          (x-diff (aref e 0)))
     (bench (send *pr2* :rarm :move-end-pos (float-vector 0 (* y-diff 1.5) 0) :world))
-    (when (< x-diff 250)
+    (when (< x-diff 180)
       (send *ri* :move-gripper :rarm 0.04 :wait t)
       (return))
     (print x-diff))
   (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
   (unix:usleep 50000))
+
+(send *pr2* :rarm :move-end-pos #f(0 0 100) :world)
+(send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
 
