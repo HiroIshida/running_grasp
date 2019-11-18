@@ -8,8 +8,13 @@
   <arg name="box_filter_frame" default="/base_link"/>
 
   <group ns="/core">
+
+    <arg name="manager" default="tmp" />
+    <node name="$(arg manager)" pkg="nodelet" type="nodelet" args="manager"
+            output="screen" />
+
     <node name="boxfilter_pre" pkg="nodelet" type="nodelet"
-      args="standalone jsk_pcl/AttentionClipper"
+      args="load jsk_pcl/AttentionClipper $(arg manager)"
       output="screen">
       <remap from="~input/points" to="$(arg input)"/>
       <rosparam>
@@ -25,7 +30,7 @@
     </node>
 
     <node name="ExtractIndices" pkg="nodelet" type="nodelet"
-      args="standalone jsk_pcl/ExtractIndices"
+      args="load jsk_pcl/ExtractIndices $(arg manager)"
       output="screen">
       <remap from="~input" to="$(arg input)"/>
       <remap from="~indices" to="boxfilter_pre/output/point_indices"/>
@@ -35,7 +40,7 @@
     </node>
 
     <node name="multi_plane_estimate" pkg="nodelet" type="nodelet"
-          args="standalone jsk_pcl/OrganizedMultiPlaneSegmentation"
+          args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)"
           output="screen">
       <remap from="~input" to="ExtractIndices/output" />
       <rosparam>
@@ -46,7 +51,7 @@
     </node>
 
     <node name="multi_plane_extraction" pkg="nodelet" type="nodelet"
-      args="standalone jsk_pcl/MultiPlaneExtraction"
+      args="load jsk_pcl/MultiPlaneExtraction $(arg manager)"
       output="screen">
       <remap from="~input" to="ExtractIndices/output"/>
       <remap from="~input_polygons" to="multi_plane_estimate/output_polygon"/>
@@ -59,7 +64,7 @@
     </node>
 
     <node name="hsi_filter" pkg="nodelet" type="nodelet"
-      args="standalone jsk_pcl/HSIColorFilter" 
+      args="load jsk_pcl/HSIColorFilter $(arg manager)" 
       output="screen">
       <remap from="~input" to="multi_plane_extraction/output" />
       <rosparam>
@@ -74,9 +79,6 @@
       <param name="i_limit_min" value="0" />
     </node>
 
-    <arg name="manager" default="tmp" />
-    <node name="$(arg manager)" pkg="nodelet" type="nodelet" args="manager"
-            output="screen" />
     <node pkg="nodelet" type="nodelet" name="euclidean_clustering"
           args="load jsk_pcl/EuclideanClustering $(arg manager)" output="screen">
           <remap from="~input" to="hsi_filter/output" />
