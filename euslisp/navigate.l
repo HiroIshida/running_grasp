@@ -61,13 +61,14 @@
   (let* ((e (get-error *pos*))
          (y-diff (aref e 1))
          (x-diff (aref e 0)))
-    (bench (send *pr2* :rarm :move-end-pos (float-vector 0 (* y-diff 1.5) 0) :world))
+    (send *pr2* :rarm :move-end-pos 
+          (float-vector 0 (* y-diff 1.5) 0) :world)
+    (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
+    (unix:usleep 50000)
+
     (when (< x-diff 180)
       (send *ri* :move-gripper :rarm 0.04 :wait t)
-      (return))
-    (print x-diff))
-  (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
-  (unix:usleep 50000))
+      (return))))
 
 (send *pr2* :rarm :move-end-pos #f(0 0 100) :world)
 (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
