@@ -56,19 +56,28 @@
 
 (send *ri* :move-gripper :rarm 0.08 :wait t)
 (unix:sleep 2)
-(loop
-  (ros::spin-once)
-  (let* ((e (get-error *pos*))
-         (y-diff (aref e 1))
-         (x-diff (aref e 0)))
-    (bench (send *pr2* :rarm :move-end-pos (float-vector 0 (* y-diff 1.5) 0) :world))
-    (when (< x-diff 180)
-      (send *ri* :move-gripper :rarm 0.04 :wait t)
-      (return))
-    (print x-diff))
-  (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
-  (unix:usleep 50000))
 
+(defun feedback-inner (robot error-getter &optional (rate 100))
+    (ros::rate rate)
+    (let ((err-pre #f(0 0 0)))
+      (loop
+        (ros::spin-once)
+        (let* ((err (funcall error-getter))
+               (errd (scale rate (v- err err-pre)))
+               (err-y (aref err 1))
+               (errd-y (aref errd 1))
+               (command (+ (* 2.0 err-y) (* 0.0 errd-y))))
+          (print command)
+          (when (> command 60) (setq command 60))
+          (send robot :rarm :move-end-pos (float-vector 0 command 0) :world)
+          (send *ri* :angle-vector (send robot :angle-vector) 1000)
+          (unix:usleep 50000)
+          (setq err-pre err)))))
+
+(feedback-inner *pr2* #'(lambda () (get-error *pos*)))
+
+#|
 (send *pr2* :rarm :move-end-pos #f(0 0 100) :world)
 (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
+|#
 
