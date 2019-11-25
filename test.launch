@@ -1,10 +1,10 @@
 <launch>
-  <arg name="remote" default="true"/>
+  <arg name="remote" default="false"/>
   <include file="$(find running_grasp)/reproduce.launch" unless="$(arg remote)"/>
-  <arg name="camera" default="head_camera_remote"/>
+  <arg name="camera" default="kinect_head"/>
   <arg name="input_image" default="/$(arg camera)/rgb/image_rect_color"/>
   <arg name="input_camera_info" default="/$(arg camera)/rgb/camera_info"/>
-  <arg name="input" default="/$(arg camera)/depth_registered/points"/>
+  <arg name="input" default="/$(arg camera)/depth_registered/quater/points"/>
   <arg name="box_filter_frame" default="/base_link"/>
 
   <group ns="/core">
@@ -46,7 +46,7 @@
       <rosparam>
         max_curvature: 0.005
         estimate_normal: true
-        min_size: 5000
+        min_size: 500
       </rosparam>
     </node>
 
@@ -59,10 +59,11 @@
       <remap from="~indices" to="multi_plane_estimate/output"/>
       <rosparam>
         min_height: 0.01
-        max_height: 0.3
+        max_height: 0.1
       </rosparam>
     </node>
 
+    <!--
     <node name="hsi_filter" pkg="nodelet" type="nodelet"
       args="load jsk_pcl/HSIColorFilter $(arg manager)" 
       output="screen">
@@ -77,14 +78,14 @@
       <param name="s_limit_min" value="45" />
       <param name="i_limit_max" value="255" />
       <param name="i_limit_min" value="0" />
-    </node>
+    </node>-->
 
     <node pkg="nodelet" type="nodelet" name="euclidean_clustering"
           args="load jsk_pcl/EuclideanClustering $(arg manager)" output="screen">
-          <remap from="~input" to="hsi_filter/output" />
+          <remap from="~input" to="multi_plane_extraction/output" />
       <rosparam>
-        tolerance: 0.02
-        min_size: 100
+        tolerance: 0.1
+        min_size: 15
       </rosparam>
     </node>
 
@@ -92,7 +93,7 @@
           name="cluster_decomposer"
           args="load jsk_pcl/ClusterPointIndicesDecomposerZAxis $(arg manager)"
           output="screen" clear_params="true">
-      <remap from="~input" to="hsi_filter/output" />
+      <remap from="~input" to="multi_plane_extraction/output" />
       <remap from="~target" to="euclidean_clustering/output" />
       <remap from="~debug_output" to="debug_output" />
       <remap from="~boxes" to="boxes" />
