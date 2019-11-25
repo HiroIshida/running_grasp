@@ -74,7 +74,7 @@
       <param name="h_limit_max" value="128" />
       <param name="h_limit_min" value="-127" />
       <param name="s_limit_max" value="255" />
-      <param name="s_limit_min" value="73" />
+      <param name="s_limit_min" value="43" />
       <param name="i_limit_max" value="255" />
       <param name="i_limit_min" value="0" />
     </node>
