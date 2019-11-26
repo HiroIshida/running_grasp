@@ -18,7 +18,6 @@
                         (setq *pos* (rospos->eusvec (send pose :position)))))))
 
 (pr2-init)
-
 (send *pr2* :rarm :move-end-pos #f(0 0 -100) :world)
 (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
 
@@ -55,9 +54,12 @@
 
 
 (send *ri* :move-gripper :rarm 0.08 :wait t)
+(speak-jp "三秒後に発進します")
+(send *ri* :wait-interpolation)
 (unix:sleep 2)
 
 (defun feedback-inner (robot error-getter &optional (rate 100))
+    ;(send *ri* :go-pos-unsafe-no-wait 1.5 0 0)
     (ros::rate rate)
     (let ((err-pre #f(0 0 0)))
       (loop
@@ -68,11 +70,11 @@
                (err-y (aref err 1))
                (errd-y (aref errd 1))
                (command (+ (* 1.5 err-y) (* 0.0 errd-y))))
-          (when (< err-x 0)
-                (send *ri* :move-gripper :rarm 0.04 :wait nil)
+          (when (< err-x 130)
+                (send *ri* :move-gripper :rarm 0.04 :wait t)
                 (return))
           (print command)
-          (when (> command 100) (setq command 100))
+          (when (> command 150) (setq command 150))
           (send robot :rarm :move-end-pos (float-vector 0 command 0) :world)
           (send *ri* :angle-vector (send robot :angle-vector) 1000)
           (unix:usleep 20000)
@@ -80,8 +82,6 @@
 
 (feedback-inner *pr2* #'(lambda () (get-error *pos*)))
 
-#|
 (send *pr2* :rarm :move-end-pos #f(0 0 100) :world)
 (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
-|#
 
