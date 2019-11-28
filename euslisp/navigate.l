@@ -68,14 +68,17 @@
         (send robot :angle-vector av-current)
         avd)))
 
-(defun solve-diff (robot)
+(defun solve-diff (robot dir)
   ;; somehow, dy < 10 does not make difference
   (let ((av-current (send robot :angle-vector))
         (arm-pos (first (get-end-effector-state robot :rarm)))
-        (dy 10)) 
-    (send robot :rarm :move-end-pos (float-vector 0 dy 0))
+        (dd 10)) 
+    (send robot :rarm :move-end-pos 
+          (cond ((eq dir :x) (float-vector dd 0 0))
+                ((eq dir :y) (float-vector 0 dd 0))
+                ((eq dir :z) (float-vector 0 0 dd))))
     (let* ((av-new (send robot :angle-vector))
-           (avd (scale (/ 1.0 dy) (v- av-new av-current))))
+           (avd (scale (/ 1.0 dd) (v- av-new av-current))))
       (send robot :angle-vector av-current)
       avd)))
 
@@ -101,11 +104,9 @@
           ;(when (< err-x 130)
           ;      (send *ri* :move-gripper :rarm 0.04 :wait t)
           ;      (return))
-          (print command)
-          (print (bench (solve-diff robot)))
 
           (when (> command 150) (setq command 150))
-          (let* ((avd (solve-diff robot))
+          (let* ((avd (solve-diff robot :y))
                  (av-new (v- (send robot :angle-vector) (scale command avd))))
             (send *ri* :angle-vector av-new 1000))
           (unix:usleep 20000)
