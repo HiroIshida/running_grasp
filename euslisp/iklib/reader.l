@@ -12,9 +12,9 @@
   :slots (robot avs n x z stepsize ymin ymax))
 
 (defmethod IKLib
-  (:init ()
+  (:init (filename)
    (setq robot (pr2))
-   (let* ((alist-load (load-jsonfile "tmp.json")))
+   (let* ((alist-load (load-jsonfile filename)))
      (setq avs 
            (apply #'vector 
                   (mapcar #'lst->vec (cdr (assoc :avs alist-load)))))
