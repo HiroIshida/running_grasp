@@ -26,10 +26,12 @@
 (send *ri* :wait-interpolation)
 (send *ri* :move-gripper :rarm 0.08 :wait t)
 (send *ri* :wait-interpolation)
+#|
 (loop 
   (unix:usleep 10000)
   (ros::spin-once)
   (unless (null *pos*) (return)))
+|#
 
 (defun get-end-effector-state (robot which-arm)
   (let* ((coords-endeffector (send robot which-arm :end-coords))
@@ -52,6 +54,30 @@
          (e (v- obj-pos arm-pos)))
     e))
 
+(defun solve-diff- (robot dy_)
+  (let ((av-current (send robot :angle-vector))
+        (arm-pos (first (get-end-effector-state robot :rarm)))
+        (dy dy_))
+      (send robot :rarm :inverse-kinematics
+            (make-coords :pos (v+ arm-pos (float-vector 0 dy 0))
+                         :rpy #f(0 0 0))
+            :rotation-axis t
+            :use-torso nil)
+      (let* ((av-new (send robot :angle-vector))
+             (avd (scale (/ 1.0 dy) (v- av-new av-current))))
+        (send robot :angle-vector av-current)
+        avd)))
+
+(defun solve-diff (robot)
+  ;; somehow, dy < 10 does not make difference
+  (let ((av-current (send robot :angle-vector))
+        (arm-pos (first (get-end-effector-state robot :rarm)))
+        (dy 10)) 
+    (send robot :rarm :move-end-pos (float-vector 0 dy 0))
+    (let* ((av-new (send robot :angle-vector))
+           (avd (scale (/ 1.0 dy) (v- av-new av-current))))
+      (send robot :angle-vector av-current)
+      avd)))
 
 (send *ri* :move-gripper :rarm 0.08 :wait t)
 (speak-jp "三秒後に発進します")
@@ -64,19 +90,24 @@
     (let ((err-pre #f(0 0 0)))
       (loop
         (ros::spin-once)
+        (send robot :angle-vector (send *ri* :state :potentio-vector))
         (let* ((err (funcall error-getter))
                (errd (scale rate (v- err err-pre)))
                (err-x (aref err 0))
                (err-y (aref err 1))
                (errd-y (aref errd 1))
-               (command (+ (* 1.5 err-y) (* 0.0 errd-y))))
-          (when (< err-x 130)
-                (send *ri* :move-gripper :rarm 0.04 :wait t)
-                (return))
+               (command (+ (* 1 err-y) (* 0.0 errd-y))))
+
+          ;(when (< err-x 130)
+          ;      (send *ri* :move-gripper :rarm 0.04 :wait t)
+          ;      (return))
           (print command)
+          (print (bench (solve-diff robot)))
+
           (when (> command 150) (setq command 150))
-          (send robot :rarm :move-end-pos (float-vector 0 command 0) :world)
-          (send *ri* :angle-vector (send robot :angle-vector) 1000)
+          (let* ((avd (solve-diff robot))
+                 (av-new (v- (send robot :angle-vector) (scale command avd))))
+            (send *ri* :angle-vector av-new 1000))
           (unix:usleep 20000)
           (setq err-pre err)))))
 
@@ -84,4 +115,3 @@
 
 (send *pr2* :rarm :move-end-pos #f(0 0 100) :world)
 (send *ri* :angle-vector (send *pr2* :angle-vector) 1000)
-
