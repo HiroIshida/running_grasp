@@ -8,6 +8,8 @@
     (close in)
     alist))
 
+
+
 (setq *alist-load* (load-jsonfile "tmp.json"))
 (setq *avs*
       (apply #'vector 
@@ -22,6 +24,9 @@
 
 
 (defun get-nearest-index (y)
+  (setq y (max y *ymin*))
+  (let ((ymax (+ *ymin* (* (- *n* 1) *stepsize*))))
+    (setq y (min y ymax)))
   (div (- y *ymin*) *stepsize*))
 
 (defun solve-from-nearest-av (robot arm y)
@@ -34,7 +39,6 @@
           :use-torso nil)))
 
 (pr2)
-(dolist (y (make-seq *ymin* *stepsize* *n*))
+(dolist (y (make-seq (- *ymin* 50) *stepsize* (+ *n* 10)))
   (bench (solve-from-nearest-av *pr2* :rarm (+ y 0.1))))
-
 
