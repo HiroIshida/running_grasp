@@ -26,12 +26,6 @@
 (send *ri* :wait-interpolation)
 (send *ri* :move-gripper :rarm 0.08 :wait t)
 (send *ri* :wait-interpolation)
-#|
-(loop 
-  (unix:usleep 10000)
-  (ros::spin-once)
-  (unless (null *pos*) (return)))
-|#
 
 (defun compute-jacobian (robot arm)
   (let* ((link (cdr (send robot :link-list (send (send robot arm :end-coords) :parent))))
@@ -50,12 +44,6 @@
       (setf (aref av (+ 8 i)) (aref theta-diff i)))
     av))
 
-    ;(setq vec #f(179.752 48.6322 39.0744 63.0444 -101.161 124.202 -104.661 -16.8737 -49.602 -9.86737 -149.803 -79.6115 124.749 -49.2461 -179.442 -30.7553 39.57))
-
-
-(compute-diff *pr2* :rarm #f(1 1 1))
-
-
 
 (defun get-end-effector-state (robot which-arm)
   (let* ((coords-endeffector (send robot which-arm :end-coords))
@@ -68,43 +56,11 @@
          (pos-endeffector (send coords-endeffector :worldpos)))
     (list pos-endeffector rpy-endeffector)))
   
-(defun guide-arm-sim (obj-pos)
-  (let* ((arm-pos (first (get-end-effector-state *pr2* :rarm)))
-         (y-diff (- (aref obj-pos 1) (aref arm-pos 1))))
-    (send *pr2* :rarm :move-end-pos (float-vector 0 y-diff 0) :world)))
-
 (defun get-error (obj-pos)
   (let* ((arm-pos (first (get-end-effector-state *pr2* :rarm)))
          (e (v- (float-vector 636.9 (aref obj-pos 1) 765.8) arm-pos)))
     e))
 
-(defun solve-diff- (robot dy_)
-  (let ((av-current (send robot :angle-vector))
-        (arm-pos (first (get-end-effector-state robot :rarm)))
-        (dy dy_))
-      (send robot :rarm :inverse-kinematics
-            (make-coords :pos (v+ arm-pos (float-vector 0 dy 0))
-                         :rpy #f(0 0 0))
-            :rotation-axis t
-            :use-torso nil)
-      (let* ((av-new (send robot :angle-vector))
-             (avd (scale (/ 1.0 dy) (v- av-new av-current))))
-        (send robot :angle-vector av-current)
-        avd)))
-
-(defun solve-diff (robot dir &optional (dd_ 10))
-  ;; somehow, dy < 10 does not make difference
-  (let ((av-current (send robot :angle-vector))
-        (arm-pos (first (get-end-effector-state robot :rarm)))
-        (dd dd_)) 
-    (send robot :rarm :move-end-pos 
-          (cond ((eq dir :x) (float-vector dd 0 0))
-                ((eq dir :y) (float-vector 0 dd 0))
-                ((eq dir :z) (float-vector 0 0 dd))))
-    (let* ((av-new (send robot :angle-vector))
-           (avd (scale (/ 1.0 dd) (v- av-new av-current))))
-      (send robot :angle-vector av-current)
-      avd)))
 
 (send *ri* :move-gripper :rarm 0.08 :wait t)
 (speak-jp "三秒後に発進します")
